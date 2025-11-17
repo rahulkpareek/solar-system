@@ -15,6 +15,19 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Load textures for all planets
+const textureLoader = new THREE.TextureLoader();
+const sunTexture = textureLoader.load('materials/sunmat.jpg');
+const mercuryTexture = textureLoader.load('materials/mercurymat.jpg');
+const venusTexture = textureLoader.load('materials/venusmat.jpg');
+const earthTexture = textureLoader.load('materials/earthmat.jpeg');
+const marsTexture = textureLoader.load('materials/marsmat.jpeg');
+const jupiterTexture = textureLoader.load('materials/jupitermat.jpg');
+const saturnTexture = textureLoader.load('materials/saturnmat.jpg');
+const uranusTexture = textureLoader.load('materials/uranusmat.jpeg');
+const neptuneTexture = textureLoader.load('materials/neptunemat.jpg');
+const plutoTexture = textureLoader.load('materials/plutomat.jpeg');
+
 function Bodyrevolve(planet, wireframe, radius, speed) {
   const time = Date.now() * 0.001 * speed;
   planet.position.x = Math.cos(time) * radius;
@@ -65,91 +78,122 @@ function createOrbitPath(radius, color) {
   return orbitPath;
 }
 
-// Sun
-const obj = BodyCreate(100, 0xffff00, 0x00ff00, true);
-const sun = obj.mesh;
-const sunWireframe = obj.wireframeMesh;
-obj.mesh.position.set(0, 0, 0);
-obj.wireframeMesh.position.set(0, 0, 0);
-scene.add(obj.mesh);
-scene.add(obj.wireframeMesh);   
+// Sun with texture
+const sunGeom = new THREE.SphereGeometry(100, 32, 32);
+const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
+const sun = new THREE.Mesh(sunGeom, sunMaterial);
+const sunWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+const sunWireframe = new THREE.Mesh(sunGeom, sunWireframeMaterial);
+sun.position.set(0, 0, 0);
+sunWireframe.position.set(0, 0, 0);
+scene.add(sun);
+scene.add(sunWireframe);   
 
-// Mercury
-const mercuryObj = BodyCreate(10, 0x00ff00, 0x00ff00, true);
-const mercury = mercuryObj.mesh;
-const mercuryWireframe = mercuryObj.wireframeMesh;
+// Mercury with texture
+const mercuryGeom = new THREE.SphereGeometry(10, 32, 32);
+const mercuryMaterial = new THREE.MeshBasicMaterial({ map: mercuryTexture });
+const mercury = new THREE.Mesh(mercuryGeom, mercuryMaterial);
+const mercuryWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+const mercuryWireframe = new THREE.Mesh(mercuryGeom, mercuryWireframeMaterial);
 mercury.position.set(300, 0, 0);
 mercuryWireframe.position.set(300, 0, 0);
 scene.add(mercury);
 scene.add(mercuryWireframe);
 
-// Venus
-const venusObj = BodyCreate(18, 0xffa500, 0xffa500, true);
-const venus = venusObj.mesh;
-const venusWireframe = venusObj.wireframeMesh;
+// Venus with texture
+const venusGeom = new THREE.SphereGeometry(18, 32, 32);
+const venusMaterial = new THREE.MeshBasicMaterial({ map: venusTexture });
+const venus = new THREE.Mesh(venusGeom, venusMaterial);
+const venusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500, wireframe: true });
+const venusWireframe = new THREE.Mesh(venusGeom, venusWireframeMaterial);
 venus.position.set(340, 0, 0);
 venusWireframe.position.set(340, 0, 0);
 scene.add(venus);
 scene.add(venusWireframe);
 
-//Earth
-const earthObj = BodyCreate(20, 0x0000ff, 0x0000ff, true);
-const earth = earthObj.mesh;
-const earthWireframe = earthObj.wireframeMesh;
+//Earth with texture
+const earthGeom = new THREE.SphereGeometry(20, 32, 32);
+const earthMaterial = new THREE.MeshBasicMaterial({ map: earthTexture });
+const earth = new THREE.Mesh(earthGeom, earthMaterial);
+const earthWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true });
+const earthWireframe = new THREE.Mesh(earthGeom, earthWireframeMaterial);
 earth.position.set(380, 0, 0);
 earthWireframe.position.set(380, 0, 0);
 scene.add(earth);
 scene.add(earthWireframe);
 
-// Mars
-const marsObj = BodyCreate(15, 0xff4500, 0xff4500, true);
-const mars = marsObj.mesh;
-const marsWireframe = marsObj.wireframeMesh;
+// Moon orbiting Earth
+const moonGeom = new THREE.SphereGeometry(6, 32, 32);
+const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+const moon = new THREE.Mesh(moonGeom, moonMaterial);
+const moonWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true });
+const moonWireframe = new THREE.Mesh(moonGeom, moonWireframeMaterial);
+moon.position.set(380 + 35, 0, 0); // Initial position near Earth
+moonWireframe.position.set(380 + 35, 0, 0);
+scene.add(moon);
+scene.add(moonWireframe);
+
+// Mars with texture
+const marsGeom = new THREE.SphereGeometry(15, 32, 32);
+const marsMaterial = new THREE.MeshBasicMaterial({ map: marsTexture });
+const mars = new THREE.Mesh(marsGeom, marsMaterial);
+const marsWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xff4500, wireframe: true });
+const marsWireframe = new THREE.Mesh(marsGeom, marsWireframeMaterial);
 mars.position.set(450, 0, 0);
 marsWireframe.position.set(450, 0, 0);
 scene.add(mars);
 scene.add(marsWireframe);
 
-// Jupiter
-const jupiterObj = BodyCreate(50, 0xd2691e, 0xd2691e, true);
-const jupiter = jupiterObj.mesh;
-const jupiterWireframe = jupiterObj.wireframeMesh;
+// Jupiter with texture
+const jupiterGeom = new THREE.SphereGeometry(50, 32, 32);
+const jupiterMaterial = new THREE.MeshBasicMaterial({ map: jupiterTexture });
+const jupiter = new THREE.Mesh(jupiterGeom, jupiterMaterial);
+const jupiterWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xd2691e, wireframe: true });
+const jupiterWireframe = new THREE.Mesh(jupiterGeom, jupiterWireframeMaterial);
 jupiter.position.set(600, 0, 0);
 jupiterWireframe.position.set(600, 0, 0);
 scene.add(jupiter);
 scene.add(jupiterWireframe);
 
-// Saturn
-const saturnObj = BodyCreate(45, 0xfad5a5, 0xfad5a5, true);
-const saturn = saturnObj.mesh;
-const saturnWireframe = saturnObj.wireframeMesh;
+// Saturn with texture
+const saturnGeom = new THREE.SphereGeometry(45, 32, 32);
+const saturnMaterial = new THREE.MeshBasicMaterial({ map: saturnTexture });
+const saturn = new THREE.Mesh(saturnGeom, saturnMaterial);
+const saturnWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xfad5a5, wireframe: true });
+const saturnWireframe = new THREE.Mesh(saturnGeom, saturnWireframeMaterial);
 saturn.position.set(700, 0, 0);
 saturnWireframe.position.set(700, 0, 0);
 scene.add(saturn);
 scene.add(saturnWireframe);
 
-// Uranus
-const uranusObj = BodyCreate(35, 0x4fd0e7, 0x4fd0e7, true);
-const uranus = uranusObj.mesh;
-const uranusWireframe = uranusObj.wireframeMesh;
+// Uranus with texture
+const uranusGeom = new THREE.SphereGeometry(35, 32, 32);
+const uranusMaterial = new THREE.MeshBasicMaterial({ map: uranusTexture });
+const uranus = new THREE.Mesh(uranusGeom, uranusMaterial);
+const uranusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4fd0e7, wireframe: true });
+const uranusWireframe = new THREE.Mesh(uranusGeom, uranusWireframeMaterial);
 uranus.position.set(850, 0, 0);
 uranusWireframe.position.set(850, 0, 0);
 scene.add(uranus);
 scene.add(uranusWireframe);
 
-// Neptune
-const neptuneObj = BodyCreate(30, 0x4166f5, 0x4166f5, true);
-const neptune = neptuneObj.mesh;
-const neptuneWireframe = neptuneObj.wireframeMesh;
+// Neptune with texture
+const neptuneGeom = new THREE.SphereGeometry(30, 32, 32);
+const neptuneMaterial = new THREE.MeshBasicMaterial({ map: neptuneTexture });
+const neptune = new THREE.Mesh(neptuneGeom, neptuneMaterial);
+const neptuneWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4166f5, wireframe: true });
+const neptuneWireframe = new THREE.Mesh(neptuneGeom, neptuneWireframeMaterial);
 neptune.position.set(950, 0, 0);
 neptuneWireframe.position.set(950, 0, 0);
 scene.add(neptune);
 scene.add(neptuneWireframe);
 
-// Pluto
-const plutoObj = BodyCreate(8, 0x8b7355, 0x8b7355, true);
-const pluto = plutoObj.mesh;
-const plutoWireframe = plutoObj.wireframeMesh;
+// Pluto with texture
+const plutoGeom = new THREE.SphereGeometry(8, 32, 32);
+const plutoMaterial = new THREE.MeshBasicMaterial({ map: plutoTexture });
+const pluto = new THREE.Mesh(plutoGeom, plutoMaterial);
+const plutoWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x8b7355, wireframe: true });
+const plutoWireframe = new THREE.Mesh(plutoGeom, plutoWireframeMaterial);
 pluto.position.set(1000, 0, 0);
 plutoWireframe.position.set(1000, 0, 0);
 scene.add(pluto);
@@ -166,11 +210,12 @@ const allWireframes = [
   saturnWireframe,
   uranusWireframe,
   neptuneWireframe,
-  plutoWireframe
+  plutoWireframe,
+  moonWireframe
 ];
 
 // Create toggle button for wireframes
-let wireframesVisible = true;
+let wireframesVisible = false;
 const toggleButton = document.createElement('button');
 toggleButton.textContent = 'Toggle Wireframes: ON';
 toggleButton.style.cssText = `
@@ -252,6 +297,16 @@ function animate() {
   // Earth - rotation and revolution
   BodyRotate(earth, earthWireframe, 0.01);
   Bodyrevolve(earth, earthWireframe, 380, 0.8);
+
+  // Moon - orbit around Earth
+  const moonOrbitTime = Date.now() * 0.001 * 2.0; // Moon orbits faster
+  const moonOrbitRadius = 35;
+  const moonAngle = moonOrbitTime;
+  moon.position.x = earth.position.x + Math.cos(moonAngle) * moonOrbitRadius;
+  moon.position.z = earth.position.z + Math.sin(moonAngle) * moonOrbitRadius;
+  moonWireframe.position.x = moon.position.x;
+  moonWireframe.position.z = moon.position.z;
+  BodyRotate(moon, moonWireframe, 0.01);
 
   // Mars - rotation and revolution
   BodyRotate(mars, marsWireframe, 0.01);
