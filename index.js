@@ -28,10 +28,13 @@ const uranusTexture = textureLoader.load('materials/uranusmat.jpeg');
 const neptuneTexture = textureLoader.load('materials/neptunemat.jpg');
 const plutoTexture = textureLoader.load('materials/plutomat.jpeg');
 
-function Bodyrevolve(planet, wireframe, radius, speed) {
+function Bodyrevolve(planet, wireframe, semiMajorAxis, speed, eccentricity = 0.1) {
   const time = Date.now() * 0.001 * speed;
-  planet.position.x = Math.cos(time) * radius;
-  planet.position.z = Math.sin(time) * radius;
+  // Calculate semi-minor axis from eccentricity: b = a * sqrt(1 - e^2)
+  const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
+  // Elliptical orbit: x = a * cos(t), z = b * sin(t)
+  planet.position.x = Math.cos(time) * semiMajorAxis;
+  planet.position.z = Math.sin(time) * semiMinorAxis;
   if (wireframe) {
     wireframe.position.x = planet.position.x;
     wireframe.position.z = planet.position.z;
@@ -57,15 +60,16 @@ function BodyCreate(size, color, wireframeColor, isWireframe) {
   return { mesh, wireframeMesh };
 }
 
-function createOrbitPath(radius, color) {
+function createOrbitPath(semiMajorAxis, color, eccentricity = 0.1) {
   const points = [];
   const segments = 64;
+  const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
   for (let i = 0; i <= segments; i++) {
     const angle = (i / segments) * Math.PI * 2;
     points.push(new THREE.Vector3(
-      Math.cos(angle) * radius,
+      Math.cos(angle) * semiMajorAxis,
       0,
-      Math.sin(angle) * radius
+      Math.sin(angle) * semiMinorAxis
     ));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -243,32 +247,32 @@ toggleButton.addEventListener('click', () => {
 });
 document.body.appendChild(toggleButton);
 
-// Create orbit paths for all planets
-const mercuryOrbit = createOrbitPath(300, 0x00ff00);
+// Create orbit paths for all planets (elliptical)
+const mercuryOrbit = createOrbitPath(300, 0x00ff00, 0.21);
 scene.add(mercuryOrbit);
 
-const venusOrbit = createOrbitPath(340, 0xffa500);
+const venusOrbit = createOrbitPath(340, 0xffa500, 0.01);
 scene.add(venusOrbit);
 
-const earthOrbit = createOrbitPath(380, 0x0000ff);
+const earthOrbit = createOrbitPath(380, 0x0000ff, 0.02);
 scene.add(earthOrbit);
 
-const marsOrbit = createOrbitPath(450, 0xff4500);
+const marsOrbit = createOrbitPath(450, 0xff4500, 0.09);
 scene.add(marsOrbit);
 
-const jupiterOrbit = createOrbitPath(600, 0xd2691e);
+const jupiterOrbit = createOrbitPath(600, 0xd2691e, 0.05);
 scene.add(jupiterOrbit);
 
-const saturnOrbit = createOrbitPath(700, 0xfad5a5);
+const saturnOrbit = createOrbitPath(700, 0xfad5a5, 0.06);
 scene.add(saturnOrbit);
 
-const uranusOrbit = createOrbitPath(850, 0x4fd0e7);
+const uranusOrbit = createOrbitPath(850, 0x4fd0e7, 0.05);
 scene.add(uranusOrbit);
 
-const neptuneOrbit = createOrbitPath(950, 0x4166f5);
+const neptuneOrbit = createOrbitPath(950, 0x4166f5, 0.01);
 scene.add(neptuneOrbit);
 
-const plutoOrbit = createOrbitPath(1000, 0x8b7355);
+const plutoOrbit = createOrbitPath(1000, 0x8b7355, 0.25);
 scene.add(plutoOrbit);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -286,51 +290,53 @@ function animate() {
   // Rotate sun
   BodyRotate(sun, sunWireframe, 0.01);
 
-  // Mercury - rotation and revolution
+  // Mercury - rotation and revolution (eccentricity: 0.21)
   BodyRotate(mercury, mercuryWireframe, 0.01);
-  Bodyrevolve(mercury, mercuryWireframe, 300, 1.0);
+  Bodyrevolve(mercury, mercuryWireframe, 300, 1.0, 0.21);
 
-  // Venus - rotation and revolution
+  // Venus - rotation and revolution (eccentricity: 0.01)
   BodyRotate(venus, venusWireframe, 0.01);
-  Bodyrevolve(venus, venusWireframe, 340, 0.9);
+  Bodyrevolve(venus, venusWireframe, 340, 0.9, 0.01);
 
-  // Earth - rotation and revolution
+  // Earth - rotation and revolution (eccentricity: 0.02)
   BodyRotate(earth, earthWireframe, 0.01);
-  Bodyrevolve(earth, earthWireframe, 380, 0.8);
+  Bodyrevolve(earth, earthWireframe, 380, 0.8, 0.02);
 
-  // Moon - orbit around Earth
-  const moonOrbitTime = Date.now() * 0.001 * 2.0; // Moon orbits faster
-  const moonOrbitRadius = 35;
+  // Moon - orbit around Earth (elliptical)
+  const moonOrbitTime = Date.now() * 0.001 * 2.0;
+  const moonSemiMajor = 35;
+  const moonEccentricity = 0.05;
+  const moonSemiMinor = moonSemiMajor * Math.sqrt(1 - moonEccentricity * moonEccentricity);
   const moonAngle = moonOrbitTime;
-  moon.position.x = earth.position.x + Math.cos(moonAngle) * moonOrbitRadius;
-  moon.position.z = earth.position.z + Math.sin(moonAngle) * moonOrbitRadius;
+  moon.position.x = earth.position.x + Math.cos(moonAngle) * moonSemiMajor;
+  moon.position.z = earth.position.z + Math.sin(moonAngle) * moonSemiMinor;
   moonWireframe.position.x = moon.position.x;
   moonWireframe.position.z = moon.position.z;
   BodyRotate(moon, moonWireframe, 0.01);
 
-  // Mars - rotation and revolution
+  // Mars - rotation and revolution (eccentricity: 0.09)
   BodyRotate(mars, marsWireframe, 0.01);
-  Bodyrevolve(mars, marsWireframe, 450, 0.6);
+  Bodyrevolve(mars, marsWireframe, 450, 0.6, 0.09);
 
-  // Jupiter - rotation and revolution
+  // Jupiter - rotation and revolution (eccentricity: 0.05)
   BodyRotate(jupiter, jupiterWireframe, 0.01);
-  Bodyrevolve(jupiter, jupiterWireframe, 600, 0.4);
+  Bodyrevolve(jupiter, jupiterWireframe, 600, 0.4, 0.05);
 
-  // Saturn - rotation and revolution
+  // Saturn - rotation and revolution (eccentricity: 0.06)
   BodyRotate(saturn, saturnWireframe, 0.01);
-  Bodyrevolve(saturn, saturnWireframe, 700, 0.3);
+  Bodyrevolve(saturn, saturnWireframe, 700, 0.3, 0.06);
 
-  // Uranus - rotation and revolution
+  // Uranus - rotation and revolution (eccentricity: 0.05)
   BodyRotate(uranus, uranusWireframe, 0.01);
-  Bodyrevolve(uranus, uranusWireframe, 850, 0.25);
+  Bodyrevolve(uranus, uranusWireframe, 850, 0.25, 0.05);
 
-  // Neptune - rotation and revolution
+  // Neptune - rotation and revolution (eccentricity: 0.01)
   BodyRotate(neptune, neptuneWireframe, 0.01);
-  Bodyrevolve(neptune, neptuneWireframe, 950, 0.2);
+  Bodyrevolve(neptune, neptuneWireframe, 950, 0.2, 0.01);
 
-  // Pluto - rotation and revolution
+  // Pluto - rotation and revolution (eccentricity: 0.25 - highly elliptical)
   BodyRotate(pluto, plutoWireframe, 0.01);
-  Bodyrevolve(pluto, plutoWireframe, 1000, 0.15);
+  Bodyrevolve(pluto, plutoWireframe, 1000, 0.15, 0.25);
 
   controls.update();
   renderer.render(scene, camera);
