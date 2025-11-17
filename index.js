@@ -396,6 +396,44 @@ revolutionToggleButton.addEventListener('click', () => {
 });
 document.body.appendChild(revolutionToggleButton);
 
+// Create snapshot button
+const snapshotButton = document.createElement('button');
+snapshotButton.textContent = 'Take Snapshot';
+snapshotButton.style.cssText = `
+  position: fixed;
+  top: 90px;
+  right: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+`;
+snapshotButton.addEventListener('click', () => {
+  // Ensure scene is rendered
+  renderer.render(scene, camera);
+  
+  // Capture the canvas as an image
+  const dataURL = renderer.domElement.toDataURL('image/png');
+  
+  // Create a download link
+  const link = document.createElement('a');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  link.download = `solar-system-snapshot-${timestamp}.png`;
+  link.href = dataURL;
+  
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+document.body.appendChild(snapshotButton);
+
 function animate() {
   requestAnimationFrame(animate);
 
