@@ -15,6 +15,11 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Revolution control variables (must be declared before Bodyrevolve function)
+let revolutionPaused = false;
+let pauseTimeOffset = 0;
+let lastPauseTime = 0;
+
 // Load textures for all planets
 const textureLoader = new THREE.TextureLoader();
 const sunTexture = textureLoader.load('materials/sunmat.jpg');
@@ -29,7 +34,12 @@ const neptuneTexture = textureLoader.load('materials/neptunemat.jpg');
 const plutoTexture = textureLoader.load('materials/plutomat.jpeg');
 
 function Bodyrevolve(planet, wireframe, semiMajorAxis, speed, eccentricity = 0.1) {
-  const time = Date.now() * 0.001 * speed;
+  // Calculate time with pause support
+  let currentTime = Date.now();
+  if (revolutionPaused) {
+    currentTime = lastPauseTime;
+  }
+  const time = (currentTime - pauseTimeOffset) * 0.001 * speed;
   // Calculate semi-minor axis from eccentricity: b = a * sqrt(1 - e^2)
   const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
   // Elliptical orbit: x = a * cos(t), z = b * sin(t)
@@ -170,6 +180,32 @@ saturnWireframe.position.set(700, 0, 0);
 scene.add(saturn);
 scene.add(saturnWireframe);
 
+// Saturn rings
+const ringGeometry = new THREE.RingGeometry(50, 70, 64); // innerRadius, outerRadius, segments
+const ringMaterial = new THREE.MeshBasicMaterial({ 
+  color: 0xd4a574,
+  side: THREE.DoubleSide,
+  opacity: 0.7,
+  transparent: true
+});
+const saturnRings = new THREE.Mesh(ringGeometry, ringMaterial);
+saturnRings.rotation.x = Math.PI / 2; // Rotate to be horizontal (perpendicular to Y axis)
+saturnRings.position.set(700, 0, 0); // Same position as Saturn
+scene.add(saturnRings);
+
+// Add additional ring layer for more detail
+const ringGeometry2 = new THREE.RingGeometry(48, 72, 64);
+const ringMaterial2 = new THREE.MeshBasicMaterial({ 
+  color: 0xc9a06b,
+  side: THREE.DoubleSide,
+  opacity: 0.5,
+  transparent: true
+});
+const saturnRings2 = new THREE.Mesh(ringGeometry2, ringMaterial2);
+saturnRings2.rotation.x = Math.PI / 2;
+saturnRings2.position.set(700, 0, 0);
+scene.add(saturnRings2);
+
 // Uranus with texture
 const uranusGeom = new THREE.SphereGeometry(35, 32, 32);
 const uranusMaterial = new THREE.MeshBasicMaterial({ map: uranusTexture });
@@ -203,6 +239,46 @@ plutoWireframe.position.set(1000, 0, 0);
 scene.add(pluto);
 scene.add(plutoWireframe);
 
+// Create asteroid belt debris between Mars (450) and Jupiter (600)
+const debrisArray = [];
+const debrisCount = 500; // Number of debris pieces
+const debrisMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+const minRadius = 470; // Slightly beyond Mars
+const maxRadius = 580; // Slightly before Jupiter
+
+for (let i = 0; i < debrisCount; i++) {
+  // Random radius between Mars and Jupiter
+  const radius = minRadius + Math.random() * (maxRadius - minRadius);
+  // Random starting angle
+  const startAngle = Math.random() * Math.PI * 2;
+  // Random speed (slower than planets)
+  const speed = 0.3 + Math.random() * 0.2; // Between 0.3 and 0.5
+  // Random eccentricity (small)
+  const eccentricity = Math.random() * 0.1; // Between 0 and 0.1
+  
+  // Create small cube
+  const debrisSize = 0.5 + Math.random() * 1.5; // Between 0.5 and 2
+  const debrisGeom = new THREE.BoxGeometry(debrisSize, debrisSize, debrisSize);
+  const debris = new THREE.Mesh(debrisGeom, debrisMaterial);
+  
+  // Store debris properties
+  debris.userData = {
+    semiMajorAxis: radius,
+    speed: speed,
+    eccentricity: eccentricity,
+    startAngle: startAngle
+  };
+  
+  // Initial position
+  const semiMinorAxis = radius * Math.sqrt(1 - eccentricity * eccentricity);
+  debris.position.x = Math.cos(startAngle) * radius;
+  debris.position.z = Math.sin(startAngle) * semiMinorAxis;
+  debris.position.y = (Math.random() - 0.5) * 20; // Random height variation
+  
+  scene.add(debris);
+  debrisArray.push(debris);
+}
+
 // Store all wireframes in an array for easy toggling
 const allWireframes = [
   sunWireframe,
@@ -220,8 +296,13 @@ const allWireframes = [
 
 // Create toggle button for wireframes
 let wireframesVisible = false;
+// Set all wireframes to invisible by default
+allWireframes.forEach(wireframe => {
+  wireframe.visible = false;
+});
+
 const toggleButton = document.createElement('button');
-toggleButton.textContent = 'Toggle Wireframes: ON';
+toggleButton.textContent = 'Toggle Wireframes: OFF';
 toggleButton.style.cssText = `
   position: fixed;
   top: 10px;
@@ -229,7 +310,7 @@ toggleButton.style.cssText = `
   padding: 10px 20px;
   font-size: 14px;
   font-family: Arial, sans-serif;
-  background-color: #4CAF50;
+  background-color: #f44336;
   color: white;
   border: none;
   border-radius: 5px;
@@ -284,6 +365,37 @@ controls.panSpeed = 1.0; // Pan speed multiplier
 controls.screenSpacePanning = false; // Pan in world space (false) or screen space (true)
 controls.keyPanSpeed = 7.0; // Speed of panning with arrow keys
 
+// Create toggle button for revolution
+const revolutionToggleButton = document.createElement('button');
+revolutionToggleButton.textContent = 'Revolution: ON';
+revolutionToggleButton.style.cssText = `
+  position: fixed;
+  top: 50px;
+  right: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+`;
+revolutionToggleButton.addEventListener('click', () => {
+  revolutionPaused = !revolutionPaused;
+  if (revolutionPaused) {
+    lastPauseTime = Date.now();
+  } else {
+    // Calculate time offset when resuming
+    pauseTimeOffset += Date.now() - lastPauseTime;
+  }
+  revolutionToggleButton.textContent = `Revolution: ${revolutionPaused ? 'OFF' : 'ON'}`;
+  revolutionToggleButton.style.backgroundColor = revolutionPaused ? '#f44336' : '#4CAF50';
+});
+document.body.appendChild(revolutionToggleButton);
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -303,7 +415,11 @@ function animate() {
   Bodyrevolve(earth, earthWireframe, 380, 0.8, 0.02);
 
   // Moon - orbit around Earth (elliptical)
-  const moonOrbitTime = Date.now() * 0.001 * 2.0;
+  let moonCurrentTime = Date.now();
+  if (revolutionPaused) {
+    moonCurrentTime = lastPauseTime;
+  }
+  const moonOrbitTime = (moonCurrentTime - pauseTimeOffset) * 0.001 * 2.0;
   const moonSemiMajor = 35;
   const moonEccentricity = 0.05;
   const moonSemiMinor = moonSemiMajor * Math.sqrt(1 - moonEccentricity * moonEccentricity);
@@ -325,6 +441,13 @@ function animate() {
   // Saturn - rotation and revolution (eccentricity: 0.06)
   BodyRotate(saturn, saturnWireframe, 0.01);
   Bodyrevolve(saturn, saturnWireframe, 700, 0.3, 0.06);
+  // Rotate and move rings with Saturn
+  saturnRings.rotation.z += 0.01;
+  saturnRings2.rotation.z += 0.01;
+  saturnRings.position.x = saturn.position.x;
+  saturnRings.position.z = saturn.position.z;
+  saturnRings2.position.x = saturn.position.x;
+  saturnRings2.position.z = saturn.position.z;
 
   // Uranus - rotation and revolution (eccentricity: 0.05)
   BodyRotate(uranus, uranusWireframe, 0.01);
@@ -337,6 +460,26 @@ function animate() {
   // Pluto - rotation and revolution (eccentricity: 0.25 - highly elliptical)
   BodyRotate(pluto, plutoWireframe, 0.01);
   Bodyrevolve(pluto, plutoWireframe, 1000, 0.15, 0.25);
+
+  // Update debris/asteroid belt
+  let debrisCurrentTime = Date.now();
+  if (revolutionPaused) {
+    debrisCurrentTime = lastPauseTime;
+  }
+  debrisArray.forEach(debris => {
+    const time = (debrisCurrentTime - pauseTimeOffset) * 0.001 * debris.userData.speed;
+    const angle = time + debris.userData.startAngle;
+    const semiMajorAxis = debris.userData.semiMajorAxis;
+    const eccentricity = debris.userData.eccentricity;
+    const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
+    
+    debris.position.x = Math.cos(angle) * semiMajorAxis;
+    debris.position.z = Math.sin(angle) * semiMinorAxis;
+    
+    // Rotate debris slowly
+    debris.rotation.x += 0.01;
+    debris.rotation.y += 0.01;
+  });
 
   controls.update();
   renderer.render(scene, camera);
