@@ -32,6 +32,7 @@ const saturnTexture = textureLoader.load('materials/saturnmat.jpg');
 const uranusTexture = textureLoader.load('materials/uranusmat.jpeg');
 const neptuneTexture = textureLoader.load('materials/neptunemat.jpg');
 const plutoTexture = textureLoader.load('materials/plutomat.jpeg');
+const moonTexture = textureLoader.load('materials/moonmat.jpg');
 
 function Bodyrevolve(planet, wireframe, semiMajorAxis, speed, eccentricity = 0.1) {
   // Calculate time with pause support
@@ -138,7 +139,7 @@ scene.add(earthWireframe);
 
 // Moon orbiting Earth
 const moonGeom = new THREE.SphereGeometry(6, 32, 32);
-const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
 const moon = new THREE.Mesh(moonGeom, moonMaterial);
 const moonWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true });
 const moonWireframe = new THREE.Mesh(moonGeom, moonWireframeMaterial);
