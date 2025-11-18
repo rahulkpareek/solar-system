@@ -20,6 +20,8 @@ document.body.appendChild(renderer.domElement);
 // Add ambient light for overall scene illumination
 const ambientLight = new THREE.AmbientLight(0x404040, 0.4); // Soft ambient light
 scene.add(ambientLight);
+const defaultAmbientIntensity = 0.4;
+const lightOffAmbientIntensity = 1.5; // Higher ambient when sun light is off
 
 // Add point light at sun position to light the planets
 // Using infinite distance (0) so light reaches all planets, with high intensity
@@ -509,6 +511,120 @@ snapshotButton.addEventListener('click', () => {
   document.body.removeChild(link);
 });
 document.body.appendChild(snapshotButton);
+
+// Store all planet meshes and their materials for light toggle
+const planetMeshes = [
+  { mesh: mercury, material: mercuryMaterial, texture: mercuryTexture, geometry: mercuryGeom },
+  { mesh: venus, material: venusMaterial, texture: venusTexture, geometry: venusGeom },
+  { mesh: earth, material: earthMaterial, texture: earthTexture, geometry: earthGeom },
+  { mesh: moon, material: moonMaterial, texture: moonTexture, geometry: moonGeom },
+  { mesh: mars, material: marsMaterial, texture: marsTexture, geometry: marsGeom },
+  { mesh: jupiter, material: jupiterMaterial, texture: jupiterTexture, geometry: jupiterGeom },
+  { mesh: saturn, material: saturnMaterial, texture: saturnTexture, geometry: saturnGeom },
+  { mesh: uranus, material: uranusMaterial, texture: uranusTexture, geometry: uranusGeom },
+  { mesh: neptune, material: neptuneMaterial, texture: neptuneTexture, geometry: neptuneGeom },
+  { mesh: pluto, material: plutoMaterial, texture: plutoTexture, geometry: plutoGeom }
+];
+
+// Function to switch materials based on light state
+function switchPlanetMaterials(useLighting) {
+  planetMeshes.forEach(({ mesh, material, texture, geometry }) => {
+    if (useLighting) {
+      // Switch to MeshStandardMaterial (with lighting)
+      const newMaterial = new THREE.MeshStandardMaterial({ map: texture });
+      mesh.material = newMaterial;
+      // Restore shadow settings for Earth and Moon
+      if (mesh === earth || mesh === moon) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+    } else {
+      // Switch to MeshBasicMaterial (flat, no lighting)
+      const newMaterial = new THREE.MeshBasicMaterial({ map: texture });
+      mesh.material = newMaterial;
+      // Disable shadows when using basic material
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+    }
+  });
+  
+  // Handle Saturn rings
+  if (useLighting) {
+    saturnRings.material = new THREE.MeshStandardMaterial({ 
+      color: 0xd4a574,
+      side: THREE.DoubleSide,
+      opacity: 0.7,
+      transparent: true
+    });
+    saturnRings2.material = new THREE.MeshStandardMaterial({ 
+      color: 0xc9a06b,
+      side: THREE.DoubleSide,
+      opacity: 0.5,
+      transparent: true
+    });
+  } else {
+    saturnRings.material = new THREE.MeshBasicMaterial({ 
+      color: 0xd4a574,
+      side: THREE.DoubleSide,
+      opacity: 0.7,
+      transparent: true
+    });
+    saturnRings2.material = new THREE.MeshBasicMaterial({ 
+      color: 0xc9a06b,
+      side: THREE.DoubleSide,
+      opacity: 0.5,
+      transparent: true
+    });
+  }
+  
+  // Handle debris
+  debrisArray.forEach(debris => {
+    if (useLighting) {
+      debris.material = new THREE.MeshStandardMaterial({ color: 0x888888 });
+    } else {
+      debris.material = new THREE.MeshBasicMaterial({ color: 0x888888 });
+    }
+  });
+}
+
+// Create toggle button for sun light
+let sunLightEnabled = true; // Light is on by default
+const sunLightToggleButton = document.createElement('button');
+sunLightToggleButton.textContent = 'Sun Light: ON';
+sunLightToggleButton.style.cssText = `
+  position: fixed;
+  top: 130px;
+  right: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+`;
+sunLightToggleButton.addEventListener('click', () => {
+  sunLightEnabled = !sunLightEnabled;
+  if (sunLightEnabled) {
+    // Turn light on
+    sunLight.intensity = 5;
+    ambientLight.intensity = defaultAmbientIntensity;
+    switchPlanetMaterials(true); // Use MeshStandardMaterial
+    sunLightToggleButton.textContent = 'Sun Light: ON';
+    sunLightToggleButton.style.backgroundColor = '#4CAF50';
+  } else {
+    // Turn light off
+    sunLight.intensity = 0;
+    ambientLight.intensity = 0.4; // Keep ambient light normal
+    switchPlanetMaterials(false); // Use MeshBasicMaterial
+    sunLightToggleButton.textContent = 'Sun Light: OFF';
+    sunLightToggleButton.style.backgroundColor = '#f44336';
+  }
+});
+document.body.appendChild(sunLightToggleButton);
 
 function animate() {
   requestAnimationFrame(animate);
