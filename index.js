@@ -358,12 +358,41 @@ scene.add(plutoOrbit);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+// Camera distance limits to keep solar system in view
+controls.minDistance = 200; // Minimum zoom distance
+controls.maxDistance = 2000; // Maximum zoom distance
 
 // Pan configuration
 controls.enablePan = true; // Enable panning (default is true)
 controls.panSpeed = 1.0; // Pan speed multiplier
 controls.screenSpacePanning = false; // Pan in world space (false) or screen space (true)
 controls.keyPanSpeed = 7.0; // Speed of panning with arrow keys
+
+// Limit panning to keep solar system in view
+const maxPanDistance = 1200; // Maximum distance from center
+controls.addEventListener('change', () => {
+  const distance = camera.position.length();
+  if (distance > maxPanDistance) {
+    // Normalize and limit position
+    camera.position.normalize().multiplyScalar(maxPanDistance);
+    controls.target.set(0, 0, 0); // Keep target at center
+  }
+  
+  // Ensure target stays near center (within reasonable bounds)
+  const targetDistance = controls.target.length();
+  if (targetDistance > 500) {
+    controls.target.normalize().multiplyScalar(500);
+  }
+});
+
+// Handle window resize to maintain aspect ratio
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 // Create toggle button for revolution
 const revolutionToggleButton = document.createElement('button');
@@ -518,6 +547,21 @@ function animate() {
     debris.rotation.x += 0.01;
     debris.rotation.y += 0.01;
   });
+
+  // Enforce camera constraints to keep solar system in view
+  const cameraDistance = camera.position.length();
+  if (cameraDistance > maxPanDistance) {
+    camera.position.normalize().multiplyScalar(maxPanDistance);
+  }
+  if (cameraDistance < controls.minDistance) {
+    camera.position.normalize().multiplyScalar(controls.minDistance);
+  }
+  
+  // Keep target near center
+  const targetDistance = controls.target.length();
+  if (targetDistance > 500) {
+    controls.target.normalize().multiplyScalar(500);
+  }
 
   controls.update();
   renderer.render(scene, camera);
