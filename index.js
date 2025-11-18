@@ -15,6 +15,16 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Add ambient light for overall scene illumination
+const ambientLight = new THREE.AmbientLight(0x404040, 0.4); // Soft ambient light
+scene.add(ambientLight);
+
+// Add point light at sun position to light the planets
+// Using infinite distance (0) so light reaches all planets, with high intensity
+const sunLight = new THREE.PointLight(0xffffff, 5, 0, 0); // color, intensity, distance (0=infinite), decay (0=no decay)
+sunLight.position.set(0, 0, 0); // At sun's position
+scene.add(sunLight);
+
 // Revolution control variables (must be declared before Bodyrevolve function)
 let revolutionPaused = false;
 let pauseTimeOffset = 0;
@@ -93,9 +103,13 @@ function createOrbitPath(semiMajorAxis, color, eccentricity = 0.1) {
   return orbitPath;
 }
 
-// Sun with texture
+// Sun with texture - using emissive material so it glows and emits light
 const sunGeom = new THREE.SphereGeometry(100, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
+const sunMaterial = new THREE.MeshBasicMaterial({ 
+  map: sunTexture,
+  emissive: 0xffffaa, // Yellow glow
+  emissiveIntensity: 0.5
+});
 const sun = new THREE.Mesh(sunGeom, sunMaterial);
 const sunWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const sunWireframe = new THREE.Mesh(sunGeom, sunWireframeMaterial);
@@ -106,7 +120,7 @@ scene.add(sunWireframe);
 
 // Mercury with texture
 const mercuryGeom = new THREE.SphereGeometry(10, 32, 32);
-const mercuryMaterial = new THREE.MeshBasicMaterial({ map: mercuryTexture });
+const mercuryMaterial = new THREE.MeshStandardMaterial({ map: mercuryTexture });
 const mercury = new THREE.Mesh(mercuryGeom, mercuryMaterial);
 const mercuryWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const mercuryWireframe = new THREE.Mesh(mercuryGeom, mercuryWireframeMaterial);
@@ -117,7 +131,7 @@ scene.add(mercuryWireframe);
 
 // Venus with texture
 const venusGeom = new THREE.SphereGeometry(18, 32, 32);
-const venusMaterial = new THREE.MeshBasicMaterial({ map: venusTexture });
+const venusMaterial = new THREE.MeshStandardMaterial({ map: venusTexture });
 const venus = new THREE.Mesh(venusGeom, venusMaterial);
 const venusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500, wireframe: true });
 const venusWireframe = new THREE.Mesh(venusGeom, venusWireframeMaterial);
@@ -128,7 +142,7 @@ scene.add(venusWireframe);
 
 //Earth with texture
 const earthGeom = new THREE.SphereGeometry(20, 32, 32);
-const earthMaterial = new THREE.MeshBasicMaterial({ map: earthTexture });
+const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture });
 const earth = new THREE.Mesh(earthGeom, earthMaterial);
 const earthWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true });
 const earthWireframe = new THREE.Mesh(earthGeom, earthWireframeMaterial);
@@ -139,7 +153,7 @@ scene.add(earthWireframe);
 
 // Moon orbiting Earth
 const moonGeom = new THREE.SphereGeometry(6, 32, 32);
-const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
+const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture });
 const moon = new THREE.Mesh(moonGeom, moonMaterial);
 const moonWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true });
 const moonWireframe = new THREE.Mesh(moonGeom, moonWireframeMaterial);
@@ -150,7 +164,7 @@ scene.add(moonWireframe);
 
 // Mars with texture
 const marsGeom = new THREE.SphereGeometry(15, 32, 32);
-const marsMaterial = new THREE.MeshBasicMaterial({ map: marsTexture });
+const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
 const mars = new THREE.Mesh(marsGeom, marsMaterial);
 const marsWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xff4500, wireframe: true });
 const marsWireframe = new THREE.Mesh(marsGeom, marsWireframeMaterial);
@@ -161,7 +175,7 @@ scene.add(marsWireframe);
 
 // Jupiter with texture
 const jupiterGeom = new THREE.SphereGeometry(50, 32, 32);
-const jupiterMaterial = new THREE.MeshBasicMaterial({ map: jupiterTexture });
+const jupiterMaterial = new THREE.MeshStandardMaterial({ map: jupiterTexture });
 const jupiter = new THREE.Mesh(jupiterGeom, jupiterMaterial);
 const jupiterWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xd2691e, wireframe: true });
 const jupiterWireframe = new THREE.Mesh(jupiterGeom, jupiterWireframeMaterial);
@@ -172,7 +186,7 @@ scene.add(jupiterWireframe);
 
 // Saturn with texture
 const saturnGeom = new THREE.SphereGeometry(45, 32, 32);
-const saturnMaterial = new THREE.MeshBasicMaterial({ map: saturnTexture });
+const saturnMaterial = new THREE.MeshStandardMaterial({ map: saturnTexture });
 const saturn = new THREE.Mesh(saturnGeom, saturnMaterial);
 const saturnWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xfad5a5, wireframe: true });
 const saturnWireframe = new THREE.Mesh(saturnGeom, saturnWireframeMaterial);
@@ -183,7 +197,7 @@ scene.add(saturnWireframe);
 
 // Saturn rings
 const ringGeometry = new THREE.RingGeometry(50, 70, 64); // innerRadius, outerRadius, segments
-const ringMaterial = new THREE.MeshBasicMaterial({ 
+const ringMaterial = new THREE.MeshStandardMaterial({ 
   color: 0xd4a574,
   side: THREE.DoubleSide,
   opacity: 0.7,
@@ -196,7 +210,7 @@ scene.add(saturnRings);
 
 // Add additional ring layer for more detail
 const ringGeometry2 = new THREE.RingGeometry(48, 72, 64);
-const ringMaterial2 = new THREE.MeshBasicMaterial({ 
+const ringMaterial2 = new THREE.MeshStandardMaterial({ 
   color: 0xc9a06b,
   side: THREE.DoubleSide,
   opacity: 0.5,
@@ -209,7 +223,7 @@ scene.add(saturnRings2);
 
 // Uranus with texture
 const uranusGeom = new THREE.SphereGeometry(35, 32, 32);
-const uranusMaterial = new THREE.MeshBasicMaterial({ map: uranusTexture });
+const uranusMaterial = new THREE.MeshStandardMaterial({ map: uranusTexture });
 const uranus = new THREE.Mesh(uranusGeom, uranusMaterial);
 const uranusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4fd0e7, wireframe: true });
 const uranusWireframe = new THREE.Mesh(uranusGeom, uranusWireframeMaterial);
@@ -220,7 +234,7 @@ scene.add(uranusWireframe);
 
 // Neptune with texture
 const neptuneGeom = new THREE.SphereGeometry(30, 32, 32);
-const neptuneMaterial = new THREE.MeshBasicMaterial({ map: neptuneTexture });
+const neptuneMaterial = new THREE.MeshStandardMaterial({ map: neptuneTexture });
 const neptune = new THREE.Mesh(neptuneGeom, neptuneMaterial);
 const neptuneWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4166f5, wireframe: true });
 const neptuneWireframe = new THREE.Mesh(neptuneGeom, neptuneWireframeMaterial);
@@ -231,7 +245,7 @@ scene.add(neptuneWireframe);
 
 // Pluto with texture
 const plutoGeom = new THREE.SphereGeometry(8, 32, 32);
-const plutoMaterial = new THREE.MeshBasicMaterial({ map: plutoTexture });
+const plutoMaterial = new THREE.MeshStandardMaterial({ map: plutoTexture });
 const pluto = new THREE.Mesh(plutoGeom, plutoMaterial);
 const plutoWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x8b7355, wireframe: true });
 const plutoWireframe = new THREE.Mesh(plutoGeom, plutoWireframeMaterial);
@@ -243,7 +257,7 @@ scene.add(plutoWireframe);
 // Create asteroid belt debris between Mars (450) and Jupiter (600)
 const debrisArray = [];
 const debrisCount = 500; // Number of debris pieces
-const debrisMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+const debrisMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
 const minRadius = 470; // Slightly beyond Mars
 const maxRadius = 580; // Slightly before Jupiter
 
