@@ -13,6 +13,8 @@ camera.lookAt(0, 0, 0);        // Look at the center (Sun)
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
 document.body.appendChild(renderer.domElement);
 
 // Add ambient light for overall scene illumination
@@ -23,6 +25,11 @@ scene.add(ambientLight);
 // Using infinite distance (0) so light reaches all planets, with high intensity
 const sunLight = new THREE.PointLight(0xffffff, 5, 0, 0); // color, intensity, distance (0=infinite), decay (0=no decay)
 sunLight.position.set(0, 0, 0); // At sun's position
+sunLight.castShadow = true; // Enable shadow casting
+sunLight.shadow.mapSize.width = 2048; // Higher resolution shadows
+sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.camera.near = 0.1;
+sunLight.shadow.camera.far = 3000; // Cover entire solar system
 scene.add(sunLight);
 
 // Revolution control variables (must be declared before Bodyrevolve function)
@@ -104,6 +111,7 @@ function createOrbitPath(semiMajorAxis, color, eccentricity = 0.1) {
 }
 
 // Sun with texture - using emissive material so it glows and emits light
+// Sun does NOT cast or receive shadows (it's the light source)
 const sunGeom = new THREE.SphereGeometry(100, 32, 32);
 const sunMaterial = new THREE.MeshBasicMaterial({ 
   map: sunTexture,
@@ -111,6 +119,8 @@ const sunMaterial = new THREE.MeshBasicMaterial({
   emissiveIntensity: 0.5
 });
 const sun = new THREE.Mesh(sunGeom, sunMaterial);
+sun.castShadow = false;
+sun.receiveShadow = false;
 const sunWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const sunWireframe = new THREE.Mesh(sunGeom, sunWireframeMaterial);
 sun.position.set(0, 0, 0);
@@ -122,6 +132,8 @@ scene.add(sunWireframe);
 const mercuryGeom = new THREE.SphereGeometry(10, 32, 32);
 const mercuryMaterial = new THREE.MeshStandardMaterial({ map: mercuryTexture });
 const mercury = new THREE.Mesh(mercuryGeom, mercuryMaterial);
+mercury.castShadow = false;
+mercury.receiveShadow = false;
 const mercuryWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
 const mercuryWireframe = new THREE.Mesh(mercuryGeom, mercuryWireframeMaterial);
 mercury.position.set(300, 0, 0);
@@ -133,6 +145,8 @@ scene.add(mercuryWireframe);
 const venusGeom = new THREE.SphereGeometry(18, 32, 32);
 const venusMaterial = new THREE.MeshStandardMaterial({ map: venusTexture });
 const venus = new THREE.Mesh(venusGeom, venusMaterial);
+venus.castShadow = false;
+venus.receiveShadow = false;
 const venusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500, wireframe: true });
 const venusWireframe = new THREE.Mesh(venusGeom, venusWireframeMaterial);
 venus.position.set(340, 0, 0);
@@ -144,6 +158,8 @@ scene.add(venusWireframe);
 const earthGeom = new THREE.SphereGeometry(20, 32, 32);
 const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture });
 const earth = new THREE.Mesh(earthGeom, earthMaterial);
+earth.castShadow = true; // Cast shadows
+earth.receiveShadow = true; // Receive shadows
 const earthWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true });
 const earthWireframe = new THREE.Mesh(earthGeom, earthWireframeMaterial);
 earth.position.set(380, 0, 0);
@@ -155,6 +171,8 @@ scene.add(earthWireframe);
 const moonGeom = new THREE.SphereGeometry(6, 32, 32);
 const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture });
 const moon = new THREE.Mesh(moonGeom, moonMaterial);
+moon.castShadow = true; // Cast shadows
+moon.receiveShadow = true; // Receive shadows
 const moonWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true });
 const moonWireframe = new THREE.Mesh(moonGeom, moonWireframeMaterial);
 moon.position.set(380 + 35, 0, 0); // Initial position near Earth
@@ -166,6 +184,8 @@ scene.add(moonWireframe);
 const marsGeom = new THREE.SphereGeometry(15, 32, 32);
 const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
 const mars = new THREE.Mesh(marsGeom, marsMaterial);
+mars.castShadow = false;
+mars.receiveShadow = false;
 const marsWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xff4500, wireframe: true });
 const marsWireframe = new THREE.Mesh(marsGeom, marsWireframeMaterial);
 mars.position.set(450, 0, 0);
@@ -177,6 +197,8 @@ scene.add(marsWireframe);
 const jupiterGeom = new THREE.SphereGeometry(50, 32, 32);
 const jupiterMaterial = new THREE.MeshStandardMaterial({ map: jupiterTexture });
 const jupiter = new THREE.Mesh(jupiterGeom, jupiterMaterial);
+jupiter.castShadow = false;
+jupiter.receiveShadow = false;
 const jupiterWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xd2691e, wireframe: true });
 const jupiterWireframe = new THREE.Mesh(jupiterGeom, jupiterWireframeMaterial);
 jupiter.position.set(600, 0, 0);
@@ -188,6 +210,8 @@ scene.add(jupiterWireframe);
 const saturnGeom = new THREE.SphereGeometry(45, 32, 32);
 const saturnMaterial = new THREE.MeshStandardMaterial({ map: saturnTexture });
 const saturn = new THREE.Mesh(saturnGeom, saturnMaterial);
+saturn.castShadow = false;
+saturn.receiveShadow = false;
 const saturnWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xfad5a5, wireframe: true });
 const saturnWireframe = new THREE.Mesh(saturnGeom, saturnWireframeMaterial);
 saturn.position.set(700, 0, 0);
@@ -225,6 +249,8 @@ scene.add(saturnRings2);
 const uranusGeom = new THREE.SphereGeometry(35, 32, 32);
 const uranusMaterial = new THREE.MeshStandardMaterial({ map: uranusTexture });
 const uranus = new THREE.Mesh(uranusGeom, uranusMaterial);
+uranus.castShadow = false;
+uranus.receiveShadow = false;
 const uranusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4fd0e7, wireframe: true });
 const uranusWireframe = new THREE.Mesh(uranusGeom, uranusWireframeMaterial);
 uranus.position.set(850, 0, 0);
@@ -236,6 +262,8 @@ scene.add(uranusWireframe);
 const neptuneGeom = new THREE.SphereGeometry(30, 32, 32);
 const neptuneMaterial = new THREE.MeshStandardMaterial({ map: neptuneTexture });
 const neptune = new THREE.Mesh(neptuneGeom, neptuneMaterial);
+neptune.castShadow = false;
+neptune.receiveShadow = false;
 const neptuneWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4166f5, wireframe: true });
 const neptuneWireframe = new THREE.Mesh(neptuneGeom, neptuneWireframeMaterial);
 neptune.position.set(950, 0, 0);
@@ -247,6 +275,8 @@ scene.add(neptuneWireframe);
 const plutoGeom = new THREE.SphereGeometry(8, 32, 32);
 const plutoMaterial = new THREE.MeshStandardMaterial({ map: plutoTexture });
 const pluto = new THREE.Mesh(plutoGeom, plutoMaterial);
+pluto.castShadow = false;
+pluto.receiveShadow = false;
 const plutoWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x8b7355, wireframe: true });
 const plutoWireframe = new THREE.Mesh(plutoGeom, plutoWireframeMaterial);
 pluto.position.set(1000, 0, 0);
@@ -275,6 +305,8 @@ for (let i = 0; i < debrisCount; i++) {
   const debrisSize = 0.5 + Math.random() * 1.5; // Between 0.5 and 2
   const debrisGeom = new THREE.BoxGeometry(debrisSize, debrisSize, debrisSize);
   const debris = new THREE.Mesh(debrisGeom, debrisMaterial);
+  debris.castShadow = false;
+  debris.receiveShadow = false;
   
   // Store debris properties
   debris.userData = {
