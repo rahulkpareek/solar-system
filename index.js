@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "jsm/controls/OrbitControls.js";
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000); // Black background for stars
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -34,6 +35,63 @@ sunLight.shadow.camera.near = 0.1;
 sunLight.shadow.camera.far = 3000; // Cover entire solar system
 scene.add(sunLight);
 
+// Create starfield background
+function createStarfield() {
+  const starCount = 10000; // Number of stars
+  const starGeometry = new THREE.BufferGeometry();
+  const starPositions = new Float32Array(starCount * 3);
+  const starColors = new Float32Array(starCount * 3);
+  
+  // Random star colors (white to slightly blue/white)
+  const starColorOptions = [
+    new THREE.Color(0xffffff), // White
+    new THREE.Color(0xffffff),
+    new THREE.Color(0xffffff),
+    new THREE.Color(0xaaaaff), // Slight blue
+    new THREE.Color(0xffaaaa), // Slight red
+    new THREE.Color(0xffffaa)  // Slight yellow
+  ];
+  
+  for (let i = 0; i < starCount; i++) {
+    // Position stars in a large sphere around the solar system
+    const radius = 2000 + Math.random() * 1000; // Stars between 2000 and 3000 units away
+    const theta = Math.random() * Math.PI * 2; // Random angle around Y axis
+    const phi = Math.acos(2 * Math.random() - 1); // Random angle from top
+    
+    const x = radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.sin(phi) * Math.sin(theta);
+    const z = radius * Math.cos(phi);
+    
+    starPositions[i * 3] = x;
+    starPositions[i * 3 + 1] = y;
+    starPositions[i * 3 + 2] = z;
+    
+    // Random star color
+    const starColor = starColorOptions[Math.floor(Math.random() * starColorOptions.length)];
+    starColors[i * 3] = starColor.r;
+    starColors[i * 3 + 1] = starColor.g;
+    starColors[i * 3 + 2] = starColor.b;
+  }
+  
+  starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+  starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+  
+  // Create star material
+  const starMaterial = new THREE.PointsMaterial({
+    size: 2,
+    sizeAttenuation: false, // Stars don't get smaller with distance
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.8
+  });
+  
+  const stars = new THREE.Points(starGeometry, starMaterial);
+  return stars;
+}
+
+const starfield = createStarfield();
+scene.add(starfield);
+
 // Revolution control variables (must be declared before Bodyrevolve function)
 let revolutionPaused = false;
 let pauseTimeOffset = 0;
@@ -53,7 +111,7 @@ const neptuneTexture = textureLoader.load('materials/neptunemat.jpg');
 const plutoTexture = textureLoader.load('materials/plutomat.jpeg');
 const moonTexture = textureLoader.load('materials/moonmat.jpg');
 
-function Bodyrevolve(planet, wireframe, semiMajorAxis, speed, eccentricity = 0.1) {
+function Bodyrevolve(planet, semiMajorAxis, speed, eccentricity = 0.1) {
   // Calculate time with pause support
   let currentTime = Date.now();
   if (revolutionPaused) {
@@ -65,17 +123,10 @@ function Bodyrevolve(planet, wireframe, semiMajorAxis, speed, eccentricity = 0.1
   // Elliptical orbit: x = a * cos(t), z = b * sin(t)
   planet.position.x = Math.cos(time) * semiMajorAxis;
   planet.position.z = Math.sin(time) * semiMinorAxis;
-  if (wireframe) {
-    wireframe.position.x = planet.position.x;
-    wireframe.position.z = planet.position.z;
-  }
 }
 
-function BodyRotate(planet, wireframe, speed) {
+function BodyRotate(planet, speed) {
   planet.rotation.y += speed;
-  if (wireframe) {
-    wireframe.rotation.y += speed;
-  }
 }
 
 function BodyCreate(size, color, wireframeColor, isWireframe) {
@@ -123,12 +174,8 @@ const sunMaterial = new THREE.MeshBasicMaterial({
 const sun = new THREE.Mesh(sunGeom, sunMaterial);
 sun.castShadow = false;
 sun.receiveShadow = false;
-const sunWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-const sunWireframe = new THREE.Mesh(sunGeom, sunWireframeMaterial);
 sun.position.set(0, 0, 0);
-sunWireframe.position.set(0, 0, 0);
-scene.add(sun);
-scene.add(sunWireframe);   
+scene.add(sun);   
 
 // Mercury with texture
 const mercuryGeom = new THREE.SphereGeometry(10, 32, 32);
@@ -136,12 +183,8 @@ const mercuryMaterial = new THREE.MeshStandardMaterial({ map: mercuryTexture });
 const mercury = new THREE.Mesh(mercuryGeom, mercuryMaterial);
 mercury.castShadow = false;
 mercury.receiveShadow = false;
-const mercuryWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-const mercuryWireframe = new THREE.Mesh(mercuryGeom, mercuryWireframeMaterial);
 mercury.position.set(300, 0, 0);
-mercuryWireframe.position.set(300, 0, 0);
 scene.add(mercury);
-scene.add(mercuryWireframe);
 
 // Venus with texture
 const venusGeom = new THREE.SphereGeometry(18, 32, 32);
@@ -149,12 +192,8 @@ const venusMaterial = new THREE.MeshStandardMaterial({ map: venusTexture });
 const venus = new THREE.Mesh(venusGeom, venusMaterial);
 venus.castShadow = false;
 venus.receiveShadow = false;
-const venusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500, wireframe: true });
-const venusWireframe = new THREE.Mesh(venusGeom, venusWireframeMaterial);
 venus.position.set(340, 0, 0);
-venusWireframe.position.set(340, 0, 0);
 scene.add(venus);
-scene.add(venusWireframe);
 
 //Earth with texture
 const earthGeom = new THREE.SphereGeometry(20, 32, 32);
@@ -162,12 +201,8 @@ const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture });
 const earth = new THREE.Mesh(earthGeom, earthMaterial);
 earth.castShadow = true; // Cast shadows
 earth.receiveShadow = true; // Receive shadows
-const earthWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true });
-const earthWireframe = new THREE.Mesh(earthGeom, earthWireframeMaterial);
 earth.position.set(380, 0, 0);
-earthWireframe.position.set(380, 0, 0);
 scene.add(earth);
-scene.add(earthWireframe);
 
 // Moon orbiting Earth
 const moonGeom = new THREE.SphereGeometry(6, 32, 32);
@@ -175,12 +210,8 @@ const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture });
 const moon = new THREE.Mesh(moonGeom, moonMaterial);
 moon.castShadow = true; // Cast shadows
 moon.receiveShadow = true; // Receive shadows
-const moonWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true });
-const moonWireframe = new THREE.Mesh(moonGeom, moonWireframeMaterial);
 moon.position.set(380 + 35, 0, 0); // Initial position near Earth
-moonWireframe.position.set(380 + 35, 0, 0);
 scene.add(moon);
-scene.add(moonWireframe);
 
 // Mars with texture
 const marsGeom = new THREE.SphereGeometry(15, 32, 32);
@@ -188,12 +219,8 @@ const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
 const mars = new THREE.Mesh(marsGeom, marsMaterial);
 mars.castShadow = false;
 mars.receiveShadow = false;
-const marsWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xff4500, wireframe: true });
-const marsWireframe = new THREE.Mesh(marsGeom, marsWireframeMaterial);
 mars.position.set(450, 0, 0);
-marsWireframe.position.set(450, 0, 0);
 scene.add(mars);
-scene.add(marsWireframe);
 
 // Jupiter with texture
 const jupiterGeom = new THREE.SphereGeometry(50, 32, 32);
@@ -201,12 +228,8 @@ const jupiterMaterial = new THREE.MeshStandardMaterial({ map: jupiterTexture });
 const jupiter = new THREE.Mesh(jupiterGeom, jupiterMaterial);
 jupiter.castShadow = false;
 jupiter.receiveShadow = false;
-const jupiterWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xd2691e, wireframe: true });
-const jupiterWireframe = new THREE.Mesh(jupiterGeom, jupiterWireframeMaterial);
 jupiter.position.set(600, 0, 0);
-jupiterWireframe.position.set(600, 0, 0);
 scene.add(jupiter);
-scene.add(jupiterWireframe);
 
 // Saturn with texture
 const saturnGeom = new THREE.SphereGeometry(45, 32, 32);
@@ -214,12 +237,8 @@ const saturnMaterial = new THREE.MeshStandardMaterial({ map: saturnTexture });
 const saturn = new THREE.Mesh(saturnGeom, saturnMaterial);
 saturn.castShadow = false;
 saturn.receiveShadow = false;
-const saturnWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xfad5a5, wireframe: true });
-const saturnWireframe = new THREE.Mesh(saturnGeom, saturnWireframeMaterial);
 saturn.position.set(700, 0, 0);
-saturnWireframe.position.set(700, 0, 0);
 scene.add(saturn);
-scene.add(saturnWireframe);
 
 // Saturn rings
 const ringGeometry = new THREE.RingGeometry(50, 70, 64); // innerRadius, outerRadius, segments
@@ -253,12 +272,8 @@ const uranusMaterial = new THREE.MeshStandardMaterial({ map: uranusTexture });
 const uranus = new THREE.Mesh(uranusGeom, uranusMaterial);
 uranus.castShadow = false;
 uranus.receiveShadow = false;
-const uranusWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4fd0e7, wireframe: true });
-const uranusWireframe = new THREE.Mesh(uranusGeom, uranusWireframeMaterial);
 uranus.position.set(850, 0, 0);
-uranusWireframe.position.set(850, 0, 0);
 scene.add(uranus);
-scene.add(uranusWireframe);
 
 // Neptune with texture
 const neptuneGeom = new THREE.SphereGeometry(30, 32, 32);
@@ -266,12 +281,8 @@ const neptuneMaterial = new THREE.MeshStandardMaterial({ map: neptuneTexture });
 const neptune = new THREE.Mesh(neptuneGeom, neptuneMaterial);
 neptune.castShadow = false;
 neptune.receiveShadow = false;
-const neptuneWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x4166f5, wireframe: true });
-const neptuneWireframe = new THREE.Mesh(neptuneGeom, neptuneWireframeMaterial);
 neptune.position.set(950, 0, 0);
-neptuneWireframe.position.set(950, 0, 0);
 scene.add(neptune);
-scene.add(neptuneWireframe);
 
 // Pluto with texture
 const plutoGeom = new THREE.SphereGeometry(8, 32, 32);
@@ -279,12 +290,8 @@ const plutoMaterial = new THREE.MeshStandardMaterial({ map: plutoTexture });
 const pluto = new THREE.Mesh(plutoGeom, plutoMaterial);
 pluto.castShadow = false;
 pluto.receiveShadow = false;
-const plutoWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x8b7355, wireframe: true });
-const plutoWireframe = new THREE.Mesh(plutoGeom, plutoWireframeMaterial);
 pluto.position.set(1000, 0, 0);
-plutoWireframe.position.set(1000, 0, 0);
 scene.add(pluto);
-scene.add(plutoWireframe);
 
 // Create asteroid belt debris between Mars (450) and Jupiter (600)
 const debrisArray = [];
@@ -327,55 +334,6 @@ for (let i = 0; i < debrisCount; i++) {
   scene.add(debris);
   debrisArray.push(debris);
 }
-
-// Store all wireframes in an array for easy toggling
-const allWireframes = [
-  sunWireframe,
-  mercuryWireframe,
-  venusWireframe,
-  earthWireframe,
-  marsWireframe,
-  jupiterWireframe,
-  saturnWireframe,
-  uranusWireframe,
-  neptuneWireframe,
-  plutoWireframe,
-  moonWireframe
-];
-
-// Create toggle button for wireframes
-let wireframesVisible = false;
-// Set all wireframes to invisible by default
-allWireframes.forEach(wireframe => {
-  wireframe.visible = false;
-});
-
-const toggleButton = document.createElement('button');
-toggleButton.textContent = 'Toggle Wireframes: OFF';
-toggleButton.style.cssText = `
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-family: Arial, sans-serif;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-`;
-toggleButton.addEventListener('click', () => {
-  wireframesVisible = !wireframesVisible;
-  allWireframes.forEach(wireframe => {
-    wireframe.visible = wireframesVisible;
-  });
-  toggleButton.textContent = `Toggle Wireframes: ${wireframesVisible ? 'ON' : 'OFF'}`;
-  toggleButton.style.backgroundColor = wireframesVisible ? '#4CAF50' : '#f44336';
-});
-document.body.appendChild(toggleButton);
 
 // Create orbit paths for all planets (elliptical)
 const mercuryOrbit = createOrbitPath(300, 0x00ff00, 0.21);
@@ -448,7 +406,7 @@ const revolutionToggleButton = document.createElement('button');
 revolutionToggleButton.textContent = 'Revolution: ON';
 revolutionToggleButton.style.cssText = `
   position: fixed;
-  top: 50px;
+  top: 10px;
   right: 10px;
   padding: 10px 20px;
   font-size: 14px;
@@ -474,43 +432,6 @@ revolutionToggleButton.addEventListener('click', () => {
 });
 document.body.appendChild(revolutionToggleButton);
 
-// Create snapshot button
-const snapshotButton = document.createElement('button');
-snapshotButton.textContent = 'Take Snapshot';
-snapshotButton.style.cssText = `
-  position: fixed;
-  top: 90px;
-  right: 10px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-family: Arial, sans-serif;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-`;
-snapshotButton.addEventListener('click', () => {
-  // Ensure scene is rendered
-  renderer.render(scene, camera);
-  
-  // Capture the canvas as an image
-  const dataURL = renderer.domElement.toDataURL('image/png');
-  
-  // Create a download link
-  const link = document.createElement('a');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  link.download = `solar-system-snapshot-${timestamp}.png`;
-  link.href = dataURL;
-  
-  // Trigger download
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-});
-document.body.appendChild(snapshotButton);
 
 // Store all planet meshes and their materials for light toggle
 const planetMeshes = [
@@ -593,7 +514,7 @@ const sunLightToggleButton = document.createElement('button');
 sunLightToggleButton.textContent = 'Sun Light: ON';
 sunLightToggleButton.style.cssText = `
   position: fixed;
-  top: 130px;
+  top: 50px;
   right: 10px;
   padding: 10px 20px;
   font-size: 14px;
@@ -626,23 +547,88 @@ sunLightToggleButton.addEventListener('click', () => {
 });
 document.body.appendChild(sunLightToggleButton);
 
+// Create toggle button for starfield
+let starfieldVisible = true; // Starfield is visible by default
+const starfieldToggleButton = document.createElement('button');
+starfieldToggleButton.textContent = 'Starfield: ON';
+starfieldToggleButton.style.cssText = `
+  position: fixed;
+  top: 90px;
+  right: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+`;
+starfieldToggleButton.addEventListener('click', () => {
+  starfieldVisible = !starfieldVisible;
+  starfield.visible = starfieldVisible;
+  starfieldToggleButton.textContent = `Starfield: ${starfieldVisible ? 'ON' : 'OFF'}`;
+  starfieldToggleButton.style.backgroundColor = starfieldVisible ? '#4CAF50' : '#f44336';
+});
+document.body.appendChild(starfieldToggleButton);
+
+// Create snapshot button (moved to last position)
+const snapshotButton = document.createElement('button');
+snapshotButton.textContent = 'Take Snapshot';
+snapshotButton.style.cssText = `
+  position: fixed;
+  top: 130px;
+  right: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+`;
+snapshotButton.addEventListener('click', () => {
+  // Ensure scene is rendered
+  renderer.render(scene, camera);
+  
+  // Capture the canvas as an image
+  const dataURL = renderer.domElement.toDataURL('image/png');
+  
+  // Create a download link
+  const link = document.createElement('a');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  link.download = `solar-system-snapshot-${timestamp}.png`;
+  link.href = dataURL;
+  
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+document.body.appendChild(snapshotButton);
+
 function animate() {
   requestAnimationFrame(animate);
 
   // Rotate sun
-  BodyRotate(sun, sunWireframe, 0.01);
+  BodyRotate(sun, 0.01);
 
   // Mercury - rotation and revolution (eccentricity: 0.21)
-  BodyRotate(mercury, mercuryWireframe, 0.01);
-  Bodyrevolve(mercury, mercuryWireframe, 300, 1.0, 0.21);
+  BodyRotate(mercury, 0.01);
+  Bodyrevolve(mercury, 300, 1.0, 0.21);
 
   // Venus - rotation and revolution (eccentricity: 0.01)
-  BodyRotate(venus, venusWireframe, 0.01);
-  Bodyrevolve(venus, venusWireframe, 340, 0.9, 0.01);
+  BodyRotate(venus, 0.01);
+  Bodyrevolve(venus, 340, 0.9, 0.01);
 
   // Earth - rotation and revolution (eccentricity: 0.02)
-  BodyRotate(earth, earthWireframe, 0.01);
-  Bodyrevolve(earth, earthWireframe, 380, 0.8, 0.02);
+  BodyRotate(earth, 0.01);
+  Bodyrevolve(earth, 380, 0.8, 0.02);
 
   // Moon - orbit around Earth (elliptical)
   let moonCurrentTime = Date.now();
@@ -656,21 +642,19 @@ function animate() {
   const moonAngle = moonOrbitTime;
   moon.position.x = earth.position.x + Math.cos(moonAngle) * moonSemiMajor;
   moon.position.z = earth.position.z + Math.sin(moonAngle) * moonSemiMinor;
-  moonWireframe.position.x = moon.position.x;
-  moonWireframe.position.z = moon.position.z;
-  BodyRotate(moon, moonWireframe, 0.01);
+  BodyRotate(moon, 0.01);
 
   // Mars - rotation and revolution (eccentricity: 0.09)
-  BodyRotate(mars, marsWireframe, 0.01);
-  Bodyrevolve(mars, marsWireframe, 450, 0.6, 0.09);
+  BodyRotate(mars, 0.01);
+  Bodyrevolve(mars, 450, 0.6, 0.09);
 
   // Jupiter - rotation and revolution (eccentricity: 0.05)
-  BodyRotate(jupiter, jupiterWireframe, 0.01);
-  Bodyrevolve(jupiter, jupiterWireframe, 600, 0.4, 0.05);
+  BodyRotate(jupiter, 0.01);
+  Bodyrevolve(jupiter, 600, 0.4, 0.05);
 
   // Saturn - rotation and revolution (eccentricity: 0.06)
-  BodyRotate(saturn, saturnWireframe, 0.01);
-  Bodyrevolve(saturn, saturnWireframe, 700, 0.3, 0.06);
+  BodyRotate(saturn, 0.01);
+  Bodyrevolve(saturn, 700, 0.3, 0.06);
   // Rotate and move rings with Saturn
   saturnRings.rotation.z += 0.01;
   saturnRings2.rotation.z += 0.01;
@@ -680,16 +664,16 @@ function animate() {
   saturnRings2.position.z = saturn.position.z;
 
   // Uranus - rotation and revolution (eccentricity: 0.05)
-  BodyRotate(uranus, uranusWireframe, 0.01);
-  Bodyrevolve(uranus, uranusWireframe, 850, 0.25, 0.05);
+  BodyRotate(uranus, 0.01);
+  Bodyrevolve(uranus, 850, 0.25, 0.05);
 
   // Neptune - rotation and revolution (eccentricity: 0.01)
-  BodyRotate(neptune, neptuneWireframe, 0.01);
-  Bodyrevolve(neptune, neptuneWireframe, 950, 0.2, 0.01);
+  BodyRotate(neptune, 0.01);
+  Bodyrevolve(neptune, 950, 0.2, 0.01);
 
   // Pluto - rotation and revolution (eccentricity: 0.25 - highly elliptical)
-  BodyRotate(pluto, plutoWireframe, 0.01);
-  Bodyrevolve(pluto, plutoWireframe, 1000, 0.15, 0.25);
+  BodyRotate(pluto, 0.01);
+  Bodyrevolve(pluto, 1000, 0.15, 0.25);
 
   // Update debris/asteroid belt
   let debrisCurrentTime = Date.now();
