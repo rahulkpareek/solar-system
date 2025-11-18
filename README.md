@@ -13,12 +13,52 @@ A 3D interactive solar system simulation built with Three.js featuring all plane
 - **Asteroid Belt**: 500+ debris pieces between Mars and Jupiter
 - **Orbit Paths**: Visual orbit rings showing each planet's elliptical path
 - **Interactive Camera**: Pan, zoom, and rotate with automatic constraints
+- **Rocket Cursor**: Custom rocket cursor for immersive experience
+- **Planet Info**: Hover over planets to see name and distance information
+
+## Project Structure
+
+```
+solar-system/
+├── src/
+│   ├── config/
+│   │   └── constants.js          # Configuration and constants
+│   ├── core/
+│   │   ├── scene.js              # Scene, camera, renderer setup
+│   │   ├── lighting.js           # Lighting configuration
+│   │   └── starfield.js          # Starfield creation
+│   ├── planets/
+│   │   ├── textures.js           # Texture loading
+│   │   ├── planets.js            # Planet creation
+│   │   ├── orbits.js             # Orbit path creation
+│   │   └── debris.js             # Asteroid belt
+│   ├── ui/
+│   │   ├── cursor.js             # Rocket cursor
+│   │   ├── tooltip.js            # Planet info tooltip
+│   │   └── buttons.js             # UI buttons
+│   ├── utils/
+│   │   ├── orbitUtils.js         # Orbital mechanics utilities
+│   │   └── materialUtils.js      # Material switching utilities
+│   ├── controls/
+│   │   └── cameraControls.js     # Camera controls setup
+│   ├── animation/
+│   │   └── animation.js          # Animation loop
+│   └── main.js                   # Main entry point
+├── materials/                    # Planet texture files
+├── index.html                    # HTML entry point
+└── README.md                     # This file
+```
 
 ## How to Run
 
 1. Start a local server:
    ```bash
    python3 -m http.server 8000
+   ```
+   
+   Or using npm:
+   ```bash
+   npm start
    ```
 
 2. Open your browser and navigate to:
@@ -40,6 +80,10 @@ A 3D interactive solar system simulation built with Three.js featuring all plane
 - **Starfield: ON/OFF**: Show/hide starfield background
 - **Take Snapshot**: Capture and download current view as PNG image
 
+### Interactive Features
+- **Hover over planets**: See planet name and distance from Sun
+- **Rocket cursor**: Custom cursor throughout the solar system view
+
 ## Solar System Components
 
 ### Planets (in order from Sun)
@@ -60,3 +104,14 @@ A 3D interactive solar system simulation built with Three.js featuring all plane
 - **Orbit Paths**: Visual elliptical rings for each planet
 - **Saturn's Rings**: Multi-layered ring system
 
+## Technologies
+
+- **Three.js** - 3D graphics library
+- **OrbitControls** - Camera control system
+- **ES6 Modules** - Modern JavaScript module system
+
+## Files
+
+- `src/main.js` - Main application entry point
+- `index.html` - HTML entry point
+- `materials/` - Planet texture files (PNG/JPEG)
