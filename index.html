@@ -7,6 +7,60 @@
     <style>
       body {
         margin: 0;
+        cursor: none; /* Hide default cursor */
+      }
+      
+      /* Show default cursor on buttons */
+      button {
+        cursor: pointer;
+      }
+      
+      /* Rocket cursor */
+      .rocket-cursor {
+        position: fixed;
+        width: 24px;
+        height: 24px;
+        pointer-events: none;
+        z-index: 10000;
+        transform: translate(-50%, -50%);
+        transition: transform 0.1s ease-out;
+      }
+      
+      .rocket-cursor::before {
+        content: '🚀';
+        font-size: 24px;
+        display: block;
+      }
+      
+      /* Planet info tooltip */
+      .planet-info {
+        position: fixed;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        pointer-events: none;
+        z-index: 9999;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        display: none;
+      }
+      
+      .planet-info.show {
+        display: block;
+      }
+      
+      .planet-info h3 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        color: #4CAF50;
+      }
+      
+      .planet-info p {
+        margin: 0;
+        font-size: 12px;
       }
     </style>
     <script type="importmap">

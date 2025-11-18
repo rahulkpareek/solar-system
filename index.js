@@ -18,6 +18,48 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
 document.body.appendChild(renderer.domElement);
 
+// Create rocket cursor element
+const rocketCursor = document.createElement('div');
+rocketCursor.className = 'rocket-cursor';
+document.body.appendChild(rocketCursor);
+
+// Create planet info tooltip
+const planetInfo = document.createElement('div');
+planetInfo.className = 'planet-info';
+document.body.appendChild(planetInfo);
+
+// Store planet information
+const planetData = new Map();
+function addPlanetData(mesh, name, distanceFromSun) {
+  planetData.set(mesh, { name, distanceFromSun });
+}
+
+// Raycaster for hover detection
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// Mouse move handler
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', (event) => {
+  mouseX = event.clientX;
+  mouseY = event.clientY;
+  
+  // Check if hovering over a button
+  const target = event.target;
+  if (target.tagName === 'BUTTON') {
+    rocketCursor.style.display = 'none';
+  } else {
+    rocketCursor.style.display = 'block';
+    // Update rocket cursor position
+    rocketCursor.style.left = mouseX + 'px';
+    rocketCursor.style.top = mouseY + 'px';
+  }
+  
+  // Update mouse for raycaster
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+});
+
 // Add ambient light for overall scene illumination
 const ambientLight = new THREE.AmbientLight(0x404040, 0.4); // Soft ambient light
 scene.add(ambientLight);
@@ -175,7 +217,8 @@ const sun = new THREE.Mesh(sunGeom, sunMaterial);
 sun.castShadow = false;
 sun.receiveShadow = false;
 sun.position.set(0, 0, 0);
-scene.add(sun);   
+scene.add(sun);
+addPlanetData(sun, 'Sun', 0);   
 
 // Mercury with texture
 const mercuryGeom = new THREE.SphereGeometry(10, 32, 32);
@@ -185,6 +228,7 @@ mercury.castShadow = false;
 mercury.receiveShadow = false;
 mercury.position.set(300, 0, 0);
 scene.add(mercury);
+addPlanetData(mercury, 'Mercury', 57.9); // Distance in million km
 
 // Venus with texture
 const venusGeom = new THREE.SphereGeometry(18, 32, 32);
@@ -194,6 +238,7 @@ venus.castShadow = false;
 venus.receiveShadow = false;
 venus.position.set(340, 0, 0);
 scene.add(venus);
+addPlanetData(venus, 'Venus', 108.2);
 
 //Earth with texture
 const earthGeom = new THREE.SphereGeometry(20, 32, 32);
@@ -203,6 +248,7 @@ earth.castShadow = true; // Cast shadows
 earth.receiveShadow = true; // Receive shadows
 earth.position.set(380, 0, 0);
 scene.add(earth);
+addPlanetData(earth, 'Earth', 149.6);
 
 // Moon orbiting Earth
 const moonGeom = new THREE.SphereGeometry(6, 32, 32);
@@ -212,6 +258,7 @@ moon.castShadow = true; // Cast shadows
 moon.receiveShadow = true; // Receive shadows
 moon.position.set(380 + 35, 0, 0); // Initial position near Earth
 scene.add(moon);
+addPlanetData(moon, 'Moon', 149.6); // Same as Earth (orbits Earth)
 
 // Mars with texture
 const marsGeom = new THREE.SphereGeometry(15, 32, 32);
@@ -221,6 +268,7 @@ mars.castShadow = false;
 mars.receiveShadow = false;
 mars.position.set(450, 0, 0);
 scene.add(mars);
+addPlanetData(mars, 'Mars', 227.9);
 
 // Jupiter with texture
 const jupiterGeom = new THREE.SphereGeometry(50, 32, 32);
@@ -230,6 +278,7 @@ jupiter.castShadow = false;
 jupiter.receiveShadow = false;
 jupiter.position.set(600, 0, 0);
 scene.add(jupiter);
+addPlanetData(jupiter, 'Jupiter', 778.5);
 
 // Saturn with texture
 const saturnGeom = new THREE.SphereGeometry(45, 32, 32);
@@ -239,6 +288,7 @@ saturn.castShadow = false;
 saturn.receiveShadow = false;
 saturn.position.set(700, 0, 0);
 scene.add(saturn);
+addPlanetData(saturn, 'Saturn', 1432.0);
 
 // Saturn rings
 const ringGeometry = new THREE.RingGeometry(50, 70, 64); // innerRadius, outerRadius, segments
@@ -274,6 +324,7 @@ uranus.castShadow = false;
 uranus.receiveShadow = false;
 uranus.position.set(850, 0, 0);
 scene.add(uranus);
+addPlanetData(uranus, 'Uranus', 2867.0);
 
 // Neptune with texture
 const neptuneGeom = new THREE.SphereGeometry(30, 32, 32);
@@ -283,6 +334,7 @@ neptune.castShadow = false;
 neptune.receiveShadow = false;
 neptune.position.set(950, 0, 0);
 scene.add(neptune);
+addPlanetData(neptune, 'Neptune', 4515.0);
 
 // Pluto with texture
 const plutoGeom = new THREE.SphereGeometry(8, 32, 32);
@@ -292,6 +344,7 @@ pluto.castShadow = false;
 pluto.receiveShadow = false;
 pluto.position.set(1000, 0, 0);
 scene.add(pluto);
+addPlanetData(pluto, 'Pluto', 5906.4);
 
 // Create asteroid belt debris between Mars (450) and Jupiter (600)
 const debrisArray = [];
@@ -711,6 +764,36 @@ function animate() {
   }
 
   controls.update();
+  
+  // Raycast for planet hover detection
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects([
+    sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto
+  ]);
+  
+  if (intersects.length > 0) {
+    const intersectedObject = intersects[0].object;
+    const data = planetData.get(intersectedObject);
+    
+    if (data) {
+      // Calculate current distance from sun (accounting for orbit)
+      const currentDistance = intersectedObject.position.length();
+      // Scale to approximate real distance (our scale: 1 unit ≈ 1.5 million km)
+      const realDistance = currentDistance * 1.5;
+      
+      planetInfo.innerHTML = `
+        <h3>${data.name}</h3>
+        <p>Distance from Sun: ${realDistance.toFixed(1)} million km</p>
+        <p>Average Distance: ${data.distanceFromSun} million km</p>
+      `;
+      planetInfo.classList.add('show');
+      planetInfo.style.left = (mouseX + 15) + 'px';
+      planetInfo.style.top = (mouseY + 15) + 'px';
+    }
+  } else {
+    planetInfo.classList.remove('show');
+  }
+  
   renderer.render(scene, camera);
 }
 animate();
